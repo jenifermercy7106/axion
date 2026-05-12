@@ -1,0 +1,904 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>AXION</title>
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+        position:relative;
+        font-family:"Lora",serif;
+        overflow-x:hidden;
+        min-height:100vh;
+        background:var(--bg);
+        color:var(--text);
+    }
+
+    body::before{
+        content:"";
+        position:fixed;
+        inset:0;
+        z-index:-1;
+        pointer-events:none;
+    }
+
+    body.night::before{
+        background:linear-gradient(180deg,#01040a 0%,#040914 42%,#08162a 100%);
+    }
+
+    body.day::before{
+        background:linear-gradient(180deg,#96d9ff 0%,#7bc4f0 36%,#8fd36c 100%);
+    }
+    button,input,textarea{font:inherit}
+    .page{display:none;min-height:100vh;position:relative}
+    body.loading .page{display:none !important}
+    .page.active{display:block}
+
+    .night{
+      --acc:#4a9eff;--acc2:#1a6eff;--glow:rgba(74,158,255,.28);
+      --text:#e8f0ff;--text2:#8aa8d4;--text3:#4a6a9a;
+      --card:rgba(8,18,50,.82);--border:rgba(74,158,255,.18);--border2:rgba(74,158,255,.32);
+      --bg:#050a18;--bg2:#080d1a;--inpr:rgba(0,0,0,.35);
+      --warn:#ffaa00;--danger:#ff4a6a;--ok:#00d4aa;
+    }
+    .day{
+      --acc:#2e7d32;--acc2:#1b5e20;--glow:rgba(46,125,50,.28);
+      --text:#1b2e1c;--text2:#3a5e3c;--text3:#6a9b6c;
+      --card:rgba(232,245,233,.88);--border:rgba(56,142,60,.22);--border2:rgba(56,142,60,.38);
+      --bg:#e8f5e9;--bg2:#dcedc8;--inpr:rgba(255,255,255,.65);
+      --warn:#e65100;--danger:#b71c1c;--ok:#1b5e20;
+    }
+
+    nav{
+      position:fixed;top:0;left:0;right:0;z-index:9999;
+      padding:.85rem 2rem;
+      display:flex;align-items:center;justify-content:space-between;
+      backdrop-filter:blur(16px)
+    }
+    .night nav{background:rgba(6,13,28,.78);border-bottom:1px solid rgba(120,165,205,.12)}
+    .day nav{background:rgba(210,238,245,.82);border-bottom:1px solid rgba(175,214,205,.62)}
+    .nav-left,.nav-links,.nav-right{display:flex;align-items:center;gap:.9rem}
+    .nav-left{gap:.6rem;cursor:pointer}
+    .brand{font-size:1.55rem;font-weight:900;letter-spacing:.32em}
+    .night .brand{color:#e8f0ff}.day .brand{color:#1e4a2d}
+    .nav-links{margin-left:auto}
+    .nav-link{
+      font-size:1.18rem;font-weight:900;cursor:pointer;background:none;border:none;
+      padding:.6rem 1.05rem;border-radius:.7rem;transition:.3s;color:var(--text2)
+    }
+    .nav-link:hover{background:var(--glow);color:var(--acc)}
+    .day .nav-link:hover{background:rgba(46,125,50,.08);color:#245f37}
+
+    .switch,.profile-btn{
+      cursor:pointer;transition:.3s;backdrop-filter:blur(8px);
+      border:none;display:flex;align-items:center;justify-content:center
+    }
+    .switch{position:relative;height:52px;width:52px;border-radius:50%}
+    .night .switch{background:rgba(12,24,52,.72);border:1px solid rgba(120,180,200,.28)}
+    .day .switch{background:rgba(245,250,247,.85);border:1px solid rgba(186,218,206,.9)}
+    .switch-thumb{
+      width:22px;height:22px;border-radius:50%;
+      position:static;font-size:13px;display:flex;align-items:center;justify-content:center
+    }
+    .night .switch-thumb{background:#d9f0ff}
+    .day .switch-thumb{background:#fff7a8}
+
+    .profile-btn{
+      width:52px;height:52px;border-radius:50%;font-size:1.08rem;font-weight:900
+    }
+    .night .profile-btn{background:rgba(15,28,56,.65);border:1px solid rgba(130,185,205,.35);color:#e8f4ff}
+    .day .profile-btn{background:rgba(240,250,248,.7);border:1px solid rgba(185,220,212,.85);color:#1d5d35}
+
+    .landing{overflow:hidden;height:100vh}
+    
+    canvas.fx{position:absolute;inset:0;pointer-events:none}
+    #cloud-layer,#stars,#mists{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+    .star{position:absolute;border-radius:50%;background:#fff;animation:twinkle var(--d) infinite}
+    @keyframes twinkle{0%,100%{opacity:var(--o)}50%{opacity:.1}}
+    .mist{
+      position:absolute;border-radius:50%;background:rgba(255,255,255,.1);
+      filter:blur(35px);animation:drift var(--d) ease-in-out infinite alternate;transition:opacity 1s
+    }
+    @keyframes drift{0%{transform:translateX(0)}100%{transform:translateX(var(--tx))}}
+
+    .hero{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-52%);
+      text-align:center;z-index:10;width:100%;padding:0 1rem
+    }
+    .logo-hero-wrap{margin:0 auto 1.2rem;width:90px;height:90px}
+    .title{
+      font-size:clamp(4rem,9vw,6.2rem);font-weight:900;letter-spacing:.08em;line-height:1;margin-bottom:.7rem
+    }
+    .night .title{color:#fff;text-shadow:0 0 40px rgba(74,158,255,.42)}
+    .day .title{color:#1a3a1a;text-shadow:0 2px 20px rgba(255,255,255,.65)}
+    .tagline{font-size:1.05rem;margin-bottom:2.2rem}
+    .night .tagline{color:#8aa8d4}.day .tagline{color:#2f5f41}
+    .btn-primary{
+      padding:.85rem 2.5rem;border-radius:3rem;font-size:.95rem;font-weight:700;
+      letter-spacing:.08em;cursor:pointer;transition:.3s;border:none
+    }
+    .night .btn-primary{background:linear-gradient(135deg,#2f79ff,#7ab3ff);color:#fff;box-shadow:0 4px 30px rgba(74,158,255,.3)}
+    .day .btn-primary{background:linear-gradient(135deg,#2c6c3e,#4f9a6a);color:#fff;box-shadow:0 4px 20px rgba(20,60,20,.22);border:2px solid #b9dfc1}
+    .btn-primary:hover{transform:translateY(-2px);filter:brightness(1.1)}
+
+    .inner-page{
+      padding:6rem 2rem 4rem;min-height:100vh;position:relative;overflow:hidden
+    }
+    
+    .inner-page > *{position:relative;z-index:1}
+
+    .page-title{
+        font-size:clamp(2.8rem,5vw,4rem);
+        font-weight:900;
+        letter-spacing:.05em;
+        margin-bottom:.5rem;
+        color:var(--text);
+    }
+    .page-sub{
+        font-size:1.15rem;
+        color:var(--text2);
+        margin-bottom:2rem;
+    }
+    .inner-max{max-width:1100px;margin:0 auto}
+
+    .auth-wrap{
+      max-width:700px;margin:8.5rem auto 0;display:flex;justify-content:center;align-items:center;
+      min-height:calc(100vh - 12rem)
+    }
+    .auth-card{
+        position:relative;
+    }
+
+    .login-switch{
+        position:absolute;
+        top:1.8rem;
+        right:1.5rem;
+        width:42px;
+        height:42px;
+    }
+    .auth-card,.tool-card,.score-card,.profile-card,.bar-section{
+      border-radius:1.5rem;border:1px solid var(--border2);backdrop-filter:blur(14px)
+    }
+    .night .auth-card,.night .tool-card,.night .score-card,.night .profile-card,.night .bar-section{
+      background:rgba(10,20,40,.82);box-shadow:0 20px 60px rgba(0,0,0,.35)
+    }
+    .day .auth-card,.day .tool-card,.day .score-card,.day .profile-card,.day .bar-section{
+      background:rgba(248,253,251,.78);box-shadow:0 20px 60px rgba(0,80,0,.08)
+    }
+    .auth-card{position:relative;padding:2.4rem 2.5rem 2.5rem;width:100%}
+    
+    .auth-tabs{display:flex;gap:.6rem;margin-bottom:1.2rem}
+    .auth-tab{
+      flex:1;padding:1.05rem 1rem;border-radius:1rem;font-size:1.18rem;font-weight:900;
+      border:1px solid var(--border);background:transparent;color:var(--text2)
+    }
+    .auth-tab.active{background:var(--glow);color:var(--acc);border-color:var(--border2)}
+    .auth-panel{display:none}.auth-panel.active{display:block}
+    .field{margin-bottom:1rem}
+    .label{
+      display:block;font-size:1.05rem;letter-spacing:.12em;font-weight:900;color:var(--text3);margin-bottom:.45rem
+    }
+    .input{
+      width:100%;padding:1.15rem 1.2rem;border-radius:1rem;border:1px solid var(--border);
+      background:var(--inpr);color:var(--text);outline:none;font-size:1.12rem
+    }
+    .auth-msg{margin-top:1rem;font-size:1.08rem;color:var(--text2);min-height:1.2em}
+
+    .input-wrap{max-width:860px;margin:0 auto}
+    .code-box{border-radius:1.5rem;overflow:hidden;border:1px solid var(--border2)}
+    .night .code-box{background:rgba(10,20,40,.82);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+    .day .code-box{background:rgba(248,253,251,.78);box-shadow:0 20px 60px rgba(0,80,0,.08)}
+    .code-topbar{display:flex;align-items:center;justify-content:space-between;padding:.8rem 1.2rem;border-bottom:1px solid var(--border)}
+    .night .code-topbar{background:rgba(255,255,255,.04)}.day .code-topbar{background:rgba(56,142,60,.06)}
+    .code-dots{display:flex;gap:6px}.dot{width:11px;height:11px;border-radius:50%}.dot-r{background:#ff5f57}.dot-y{background:#ffbd2e}.dot-g{background:#28ca41}
+    .code-lang{font-size:11px;font-weight:700;letter-spacing:1.5px;color:var(--text3)}
+    .code-textarea{
+      width:100%;min-height:600px;padding:1.4rem;border:none;outline:none;font-size:.97rem;line-height:1.8;
+      resize:vertical;background:transparent;color:var(--text)
+    }
+    .code-textarea::placeholder{color:var(--text3)}
+    .code-footer{
+      padding:1rem 1.2rem;border-top:1px solid var(--border);display:flex;align-items:center;
+      justify-content:space-between;flex-wrap:wrap;gap:.75rem
+    }
+    .code-hint{font-size:11px;color:var(--text3)}
+    .run-btn,.logout-btn{
+      padding:.7rem 2rem;border-radius:2rem;font-size:.88rem;font-weight:700;
+      cursor:pointer;transition:.3s;border:1px solid var(--border2);letter-spacing:.05em
+    }
+    .night .run-btn{background:linear-gradient(135deg,#1a6eff,#4a9eff);color:#fff;box-shadow:0 0 20px rgba(74,158,255,.3)}
+    .day .run-btn{background:linear-gradient(135deg,#1a4a1a,#2d7a2d);color:#fff;box-shadow:0 0 16px rgba(20,80,20,.3);border:1.5px solid #7ecc6a}
+    .logout-btn{margin-top:.8rem}
+    .night .logout-btn{background:rgba(10,20,60,.92);color:#fff;border-color:rgba(74,158,255,.45);box-shadow:0 0 18px rgba(74,158,255,.22)}
+    .day .logout-btn{background:rgba(255,255,255,.75);color:#1a3a1a}
+
+    .scan-overlay{
+      display:none;position:fixed;inset:0;z-index:99999;flex-direction:column;align-items:center;
+      justify-content:center;gap:1.5rem;backdrop-filter:blur(8px)
+    }
+    .scan-overlay.show{display:flex}
+    .night .scan-overlay{background:rgba(2,6,16,.98)}.day .scan-overlay{background:rgba(220,240,220,.96)}
+    .scan-label{font-size:1.1rem;font-weight:700;letter-spacing:.1em;color:var(--text)}
+    .scan-tool{font-size:.84rem;color:var(--text2);min-height:1.2em}
+    .scan-bar-wrap{width:300px;height:4px;border-radius:2px;overflow:hidden}
+    .night .scan-bar-wrap{background:rgba(255,255,255,.08)}.day .scan-bar-wrap{background:rgba(0,0,0,.1)}
+    .scan-bar-fill{height:100%;border-radius:2px;width:0}
+    .night .scan-bar-fill{background:linear-gradient(90deg,#1a6eff,#4a9eff)}
+    .day .scan-bar-fill{background:linear-gradient(90deg,#1b5e20,#2e7d32)}
+
+    .tools-grid{
+        display:flex;
+        flex-direction:column;
+        gap:1rem;
+        margin-top:1.5rem;
+    }
+    .tool-card{padding:1.4rem;position:relative;overflow:hidden}
+    .tool-card{
+        height:auto;
+    }
+
+    .detail-item{
+        white-space:normal;
+        overflow:visible;
+        word-break:break-word;
+    }
+    .tool-card:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 12px 40px var(--glow)}
+    .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem}
+    .tool-name{
+        font-size:1.15rem;
+        font-weight:700;
+        color:var(--text);
+    }
+    .tool-co{
+        font-size:.9rem;
+        color:var(--text3);
+        margin-top:2px;
+    }
+    .tool-role{
+        font-size:.95rem;
+        color:var(--text2);
+        margin-top:2px;
+    }
+    .card-count{
+        font-size:.95rem;
+        font-weight:700;
+        color:var(--text);
+        margin-bottom:.6rem;
+    }
+
+    .badge{
+        padding:.35rem .8rem;
+        border-radius:2rem;
+        font-size:.8rem;
+        font-weight:700;
+        white-space:nowrap;
+    }
+
+    .badge-warn{background:rgba(255,170,0,.13);color:var(--warn);border:1px solid rgba(255,170,0,.25)}
+    .badge-clean{background:rgba(0,212,170,.12);color:var(--ok);border:1px solid rgba(0,212,170,.22)}
+    .badge-done{background:var(--glow);color:var(--acc);border:1px solid var(--border2)}
+    .badge-error{background:rgba(255,74,106,.12);color:var(--danger);border:1px solid rgba(255,74,106,.22)}
+    .detail-item{
+        border-radius:.6rem;
+        padding:.65rem .9rem;
+        font-size:.9rem;
+        color:var(--text2);
+        line-height:1.6;
+        margin-bottom:.4rem;
+    }
+    .night .detail-item{background:rgba(0,0,0,.28)}.day .detail-item{background:rgba(46,125,50,.07)}
+
+    .scores-row{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.2rem;margin-bottom:1.5rem
+    }
+    .score-card{padding:1.6rem;text-align:center}
+    .score-label{font-size:.72rem;font-weight:700;letter-spacing:.12em;color:var(--text3);margin-bottom:1.2rem}
+    .ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 1.2rem}
+    .ring-num{
+      position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+      font-size:1.6rem;font-weight:900
+    }
+    .score-desc{font-size:.78rem;color:var(--text2);line-height:1.6}
+
+    .bar-section{padding:1.5rem;margin-bottom:1.2rem}
+    .bar-section-title{font-size:.78rem;font-weight:700;letter-spacing:.1em;color:var(--text2);margin-bottom:1.2rem}
+    .bar-row{display:grid;grid-template-columns:130px 1fr 36px;align-items:center;gap:.8rem;margin-bottom:.65rem}
+    .bar-lbl{font-size:.74rem;color:var(--text2);text-align:right}
+    .bar-track{height:7px;border-radius:4px;overflow:hidden}
+    .night .bar-track{background:rgba(255,255,255,.06)}.day .bar-track{background:rgba(0,0,0,.08)}
+    .bar-fill{height:100%;border-radius:4px;transition:width 1.2s ease}
+    .bar-num{font-size:.74rem;font-weight:700;color:var(--text)}
+
+    .profile-wrap{max-width:760px;margin:0 auto;display:grid;gap:1.1rem}
+    .profile-card{padding:1.5rem}
+    .profile-top{display:flex;align-items:center;gap:1rem}
+    .profile-circle{
+      width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      font-weight:900;font-size:1.45rem;color:#fff;background:linear-gradient(135deg,var(--acc2),var(--acc));box-shadow:0 0 24px var(--glow)
+    }
+    .profile-name{font-size:1.15rem;font-weight:800;color:var(--text)}
+    .profile-email{font-size:.8rem;color:var(--text2);margin-top:.2rem}
+    .profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:.8rem;margin-top:1.2rem}
+    .stat-box{border-radius:1rem;padding:1rem;text-align:center;border:1px solid var(--border)}
+    .night .stat-box{background:rgba(255,255,255,.03)}.day .stat-box{background:rgba(255,255,255,.45)}
+    .stat-box b{display:block;font-size:1.2rem;color:var(--acc)}.stat-box span{display:block;font-size:.72rem;color:var(--text2);margin-top:.2rem}
+
+    @media(max-width:900px){
+      .nav-links{gap:.35rem}.tools-grid{grid-template-columns:1fr}.scores-row,.profile-stats{grid-template-columns:1fr}.bar-row{grid-template-columns:92px 1fr 28px}
+    }
+    @media(max-width:700px){
+      nav{padding:.85rem 1rem}.brand{font-size:.9rem}.nav-link{padding:.3rem .45rem;font-size:.76rem}
+      .title{font-size:clamp(2.6rem,12vw,4rem)}.inner-page{padding:5.5rem 1rem 3rem}.auth-wrap{margin:6.5rem auto 0}
+    }
+  </style>
+</head>
+<body class="night loading">
+    <div id="sky"></div>
+    <div id="cloud-layer"></div>
+    <canvas class="fx" id="fx" width="1920" height="1080"></canvas>
+    <div id="stars"></div>
+    <div id="mists"></div>
+    <nav id="main-nav">
+    <div class="nav-left" onclick="goTo('landing')">
+      <canvas id="logo-nav" width="52" height="52"></canvas>
+      <span class="brand">AXION</span>
+    </div>
+    <div class="nav-right">
+      <div class="nav-links" id="nav-links" style="display:none">
+        <button class="nav-link" onclick="goTo('landing')">Home</button>
+        <button class="nav-link" onclick="goTo('input-page')">Scan</button>
+        <button class="nav-link" onclick="goTo('dashboard')">Dashboard</button>
+        <button class="nav-link" onclick="goTo('stats-page')">Stats</button>
+        <button class="profile-btn" id="nav-profile" onclick="goTo('profile-page')" style="display:none">A</button>
+        <button class="switch" onclick="toggleMode()" id="thumb-btn"></button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="page" id="auth-page">
+    <div class="inner-page">
+      <div class="auth-wrap">
+        <div class="auth-card">
+          <button class="switch login-switch" onclick="toggleMode()" id="login-thumb-btn"></button>
+          <div class="auth-tabs">
+            <button class="auth-tab active" id="login-tab" onclick="switchAuth('login')">LOGIN</button>
+            <button class="auth-tab" id="signup-tab" onclick="switchAuth('signup')">SIGN UP</button>
+          </div>
+
+          <div class="auth-panel active" id="login-panel">
+            <div class="field"><label class="label">EMAIL</label><input class="input" id="login-email" type="email" placeholder="you@example.com"></div>
+            <div class="field"><label class="label">PASSWORD</label><input class="input" id="login-password" type="password" placeholder="••••••••"></div>
+            <button class="btn-primary" onclick="loginUser()">ENTER AXION</button>
+            <div class="auth-msg" id="login-msg"></div>
+          </div>
+
+          <div class="auth-panel" id="signup-panel">
+            <div class="field"><label class="label">NAME</label><input class="input" id="signup-name" type="text" placeholder="Your name"></div>
+            <div class="field"><label class="label">EMAIL</label><input class="input" id="signup-email" type="email" placeholder="you@example.com"></div>
+            <div class="field"><label class="label">PASSWORD</label><input class="input" id="signup-password" type="password" placeholder="Create a password"></div>
+            <button class="btn-primary" onclick="signupUser()">CREATE ACCOUNT</button>
+            <div class="auth-msg" id="signup-msg"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page landing" id="landing">
+    
+    <div class="hero">
+      <div class="logo-hero-wrap"><canvas id="logo-hero" width="120" height="120"></canvas></div>
+      <div class="title">AXION</div>
+      <div class="tagline">See what your code hides.</div>
+      <button class="btn-primary" onclick="goTo('input-page')">START SCANNING</button>
+    </div>
+  </div>
+
+  <div class="page" id="input-page">
+    <div class="inner-page">
+      <div class="input-wrap">
+        <div class="page-title">PASTE YOUR CODE</div>
+        <div class="page-sub">AXION runs 10 AI tools in parallel and delivers a complete code health report.</div>
+        <div class="code-box">
+          <div class="code-topbar">
+            <div class="code-dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div>
+            <div class="code-lang">PYTHON</div>
+          </div>
+          <textarea class="code-textarea" id="code-input" placeholder="Paste your Python code here...
+
+import sqlite3
+password = 'admin123'
+def get_user(user_input):
+    query = 'SELECT * FROM users WHERE id=' + str(user_input)
+    return query"></textarea>
+          <div class="code-footer">
+            <div class="code-hint">More code = deeper analysis</div>
+            <button class="run-btn" onclick="startScan()">⚡ RUN AXION SCAN</button>
+          </div>
+        </div>
+        <div class="auth-msg">After the scan completes, go to Dashboard or Stats.</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="scan-overlay" class="scan-overlay">
+    <canvas id="logo-scan" width="96" height="96"></canvas>
+    <div class="scan-label">AXION IS SCANNING...</div>
+    <div class="scan-bar-wrap"><div class="scan-bar-fill" id="scan-fill"></div></div>
+    <div class="scan-tool" id="scan-tool">Initializing tools...</div>
+  </div>
+
+  <div class="page" id="dashboard">
+    <div class="inner-page">
+      <div class="inner-max">
+        <div class="page-title">CODE HEALTH REPORT</div>
+        <div class="page-sub">AI-powered analysis across 10 specialized engines</div>
+        <div class="tools-grid" id="tools-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="stats-page">
+    <div class="inner-page">
+      <div class="inner-max">
+        <div class="page-title">CODE EFFICIENCY STATS</div>
+        <div class="page-sub">Detailed breakdown across all dimensions of your code</div>
+        <div class="scores-row" id="scores-row"></div>
+        <div class="bar-section">
+          <div class="bar-section-title">FINDINGS PER AI TOOL</div>
+          <div id="bar-chart"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="profile-page">
+    <div class="inner-page">
+      <div class="profile-wrap">
+        <div class="profile-card">
+          <div class="profile-top">
+            <div class="profile-circle" id="profile-circle">A</div>
+            <div>
+              <div class="profile-name" id="profile-name">Anonymous</div>
+              <div class="profile-email" id="profile-email">Not logged in</div>
+            </div>
+          </div>
+          <div class="profile-stats">
+            <div class="stat-box"><b id="stat-scans">0</b><span>Scans</span></div>
+            <div class="stat-box"><b id="stat-warnings">0</b><span>Warnings</span></div>
+            <div class="stat-box"><b id="stat-clean">0</b><span>Clean tools</span></div>
+          </div>
+          <button class="logout-btn" onclick="logoutUser()">LOG OUT</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let isNight=true, scanResults=[], scanCount=0, currentUser=null;
+
+    function applyTheme() {
+        const cls = isNight ? 'night' : 'day';
+
+        document.body.className = cls;
+
+        document.querySelectorAll('.page, #scan-overlay').forEach(el => {
+            el.classList.remove('night', 'day');
+            el.classList.add(cls);
+        });
+
+        const thumb = document.getElementById('thumb-btn');
+        if (thumb) {
+            thumb.textContent = isNight ? '☾' : '☀';
+            thumb.style.color = isNight ? '#fff' : '#000';
+        }
+        
+        const loginThumb = document.getElementById('login-thumb-btn');
+        if (loginThumb) {
+            loginThumb.textContent = isNight ? '☾' : '☀';
+            loginThumb.style.color = isNight ? '#fff' : '#000';
+        }
+
+        document.querySelectorAll('.star').forEach(s => {
+            s.style.display = isNight ? 'block' : 'none';
+        });
+
+        
+
+        cloudData.forEach(c => drawCloud(c.el, c.scale, isNight));
+
+        
+        }
+
+    function toggleMode() {
+        isNight = !isNight;
+        applyTheme();
+    }
+
+    function goTo(id){
+      localStorage.setItem('lastPage', id);
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0,0);
+      if(id==='profile-page')loadProfile();
+      if(id==='auth-page'){
+        document.getElementById('nav-links').style.display='none';
+        document.getElementById('nav-profile').style.display='none'
+      }else if(currentUser){
+        document.getElementById('nav-links').style.display='flex';
+        document.getElementById('nav-profile').style.display='flex'
+      }
+    }
+
+    function switchAuth(mode){
+      document.getElementById('login-tab').classList.toggle('active',mode==='login');
+      document.getElementById('signup-tab').classList.toggle('active',mode==='signup');
+      document.getElementById('login-panel').classList.toggle('active',mode==='login');
+      document.getElementById('signup-panel').classList.toggle('active',mode==='signup')
+    }
+
+    function setMsg(id,msg,ok=false){
+      const el=document.getElementById(id);
+      el.textContent=msg;
+      el.style.color=ok?'var(--ok)':'var(--text2)'
+    }
+
+    async function signupUser(){
+      const name=document.getElementById('signup-name').value.trim();
+      const email=document.getElementById('signup-email').value.trim();
+      const password=document.getElementById('signup-password').value.trim();
+      setMsg('signup-msg','Creating account...');
+      try{
+        const r=await fetch('/api/register',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({name,email,password})
+        });
+        const data=await r.json();
+        if(data.ok){
+          setMsg('signup-msg',data.message||'Account created.',true);
+          switchAuth('login');
+          document.getElementById('login-email').value=email
+        }else{
+          setMsg('signup-msg',data.error||'Sign up failed.')
+        }
+      }catch{
+        setMsg('signup-msg','Could not reach register API.')
+      }
+    }
+
+    async function loginUser(){
+      const email=document.getElementById('login-email').value.trim();
+      const password=document.getElementById('login-password').value.trim();
+      setMsg('login-msg','Signing in...');
+      try{
+        const r=await fetch('/api/login',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({email,password})
+        });
+        const data=await r.json();
+        if(data.ok){
+          currentUser=data.user;
+          updateProfileUI();
+          setMsg('login-msg',data.message||'Logged in.',true);
+          document.getElementById('nav-links').style.display='flex';
+          document.getElementById('nav-profile').style.display='flex';
+          goTo('landing')
+        }else{
+          setMsg('login-msg',data.error||'Account does not exist or password is wrong.')
+        }
+      }catch{
+        setMsg('login-msg','Could not reach login API.')
+      }
+    }
+
+    async function logoutUser(){
+      try{await fetch('/api/logout',{method:'POST'})}catch{}
+      currentUser=null;
+      updateProfileUI();
+      document.getElementById('nav-links').style.display='none';
+      document.getElementById('nav-profile').style.display='none';
+      goTo('auth-page')
+    }
+
+    async function loadProfile(){
+      try{
+        const r=await fetch('/api/profile');
+        const data=await r.json();
+        if(data.ok)currentUser=data.user
+      }catch{}
+      updateProfileUI()
+    }
+
+    function updateProfileUI(){
+      const name=(currentUser&&currentUser.name)||'Anonymous';
+      const email=(currentUser&&currentUser.email)||'Not logged in';
+      const initial=(name&&name[0]?name[0].toUpperCase():'A');
+      document.getElementById('profile-name').textContent=name;
+      document.getElementById('profile-email').textContent=email;
+      document.getElementById('profile-circle').textContent=initial;
+      document.getElementById('nav-profile').textContent=initial;
+      document.getElementById('stat-scans').textContent=scanCount;
+      document.getElementById('stat-warnings').textContent=scanResults.filter(r=>(r.status||'').toLowerCase().includes('warn')).length;
+      document.getElementById('stat-clean').textContent=scanResults.filter(r=>(r.status||'').toLowerCase().includes('clean')).length
+    }
+
+    const starsEl=document.getElementById('stars');
+    for(let i=0;i<130;i++){
+      const s=document.createElement('div');
+      s.className='star';
+      const sz=Math.random()*2+.4,op=Math.random()*.6+.3;
+      s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*65}%;position:absolute;--o:${op};--d:${2+Math.random()*3}s;opacity:${op}`;
+      starsEl.appendChild(s)
+    }
+
+    const mistsEl=document.getElementById('mists');
+    for(let i=0;i<7;i++){
+      const m=document.createElement('div');
+      m.className='mist';
+      const w=160+Math.random()*180;
+      m.style.cssText=`width:${w}px;height:${w*.35}px;left:${Math.random()*100}%;top:${45+Math.random()*45}%;position:absolute;--d:${9+Math.random()*8}s;--tx:${Math.random()*50-25}px;opacity:0.1`;
+      mistsEl.appendChild(m)
+    }
+
+    const cloudLayer=document.getElementById('cloud-layer'),cloudData=[];
+    function drawCloud(c,scale,night){
+      const ctx=c.getContext('2d');
+      ctx.clearRect(0,0,220,90);
+      if(night) return;
+      ctx.save();
+      ctx.scale(scale,scale);
+      const grad=ctx.createLinearGradient(0,0,220,90);
+      grad.addColorStop(0,'rgba(255,255,255,.95)');
+      grad.addColorStop(.55,'rgba(240,248,255,.92)');
+      grad.addColorStop(1,'rgba(228,240,255,.88)');
+      ctx.fillStyle=grad;
+      ctx.shadowColor='rgba(170,210,255,.42)';
+      ctx.shadowBlur=14;
+      [[60,46,34],[92,42,26],[126,48,22],[104,60,18],[72,60,20],[38,56,18]].forEach(([cx,cy,r])=>{
+        ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.fill()
+      });
+      ctx.restore()
+    }
+
+    function makeCloud(x,y,scale,speed){
+      const c=document.createElement('canvas');
+      c.width=220;c.height=90;
+      c.style.cssText=`position:absolute;top:${y}px;left:${x}px;opacity:1`;
+      cloudLayer.appendChild(c);
+      cloudData.push({el:c,x,y,speed,scale});
+      drawCloud(c,scale,isNight)
+    }
+
+    [
+      {x:-220,y:120,scale:1.2,speed:.18},
+      {x:80,y:105,scale:.9,speed:.13},
+      {x:320,y:135,scale:1.0,speed:.16},
+      {x:520,y:115,scale:.8,speed:.11},
+      {x:-80,y:175,scale:.75,speed:.09},
+      {x:180,y:165,scale:1.1,speed:.14},
+      {x:460,y:155,scale:.85,speed:.12}
+    ].forEach(c=>makeCloud(c.x,c.y,c.scale,c.speed));
+
+    const fxCanvas=document.getElementById('fx'),fxCtx=fxCanvas.getContext('2d'),drops=[];
+    for(let i=0;i<45;i++)drops.push({x:Math.random()*1920,y:Math.random()*1080,speed:.25+Math.random()*.35,len:10+Math.random()*8,op:.08+Math.random()*.12,drift:.03+Math.random()*.07});
+
+    function animateFX(){
+      fxCtx.clearRect(0,0,1920,1080);
+      cloudData.forEach(c=>{
+        c.x+=c.speed;
+        if(c.x>window.innerWidth+220)c.x=-220;
+        c.el.style.left=c.x+'px'
+      });
+      if (isNight) {
+        drops.forEach(d => {
+            fxCtx.beginPath();
+            fxCtx.moveTo(d.x, d.y);
+            fxCtx.lineTo(d.x - 0.8, d.y + d.len);
+            fxCtx.strokeStyle = `rgba(190,225,255,0.22)`;
+            fxCtx.lineWidth = 1;
+            fxCtx.stroke();
+
+            d.y += d.speed * 15;
+            d.x -= d.drift * 0;
+
+            if (d.y > 1080 || d.x < 0) {
+                d.y = Math.random() * -160;
+                d.x = Math.random() * 1920;
+            }
+        });
+    }
+      requestAnimationFrame(animateFX)
+    }
+    animateFX();
+
+    function drawLogo(el,size,night){
+        const c=el.getContext('2d');
+        c.clearRect(0,0,size,size);
+        const cx=size/2, cy=size/2, r=size*.46;
+
+        const bg = c.createLinearGradient(0,0,0,size);
+        if(night){
+            bg.addColorStop(0,'#6fb8ff');
+            bg.addColorStop(1,'#1a6eff');
+        }else{
+            bg.addColorStop(0,'#6fb86f');
+            bg.addColorStop(1,'#2e7d32');
+        }
+
+        c.fillStyle=bg;
+        c.beginPath();
+        c.arc(cx,cy,r,0,Math.PI*2);
+        c.fill();
+
+        c.shadowColor = night ? 'rgba(74,158,255,.35)' : 'rgba(46,125,50,.25)';
+        c.shadowBlur = 10;
+        c.fillStyle = '#fff';
+        c.font = `900 ${size*0.42}px Lora, serif`;
+        c.textAlign='center';
+        c.textBaseline='middle';
+        c.fillText('A', cx, cy+size*0.02);
+    }
+    function animateLogos(){
+      ['logo-nav','logo-hero','logo-scan'].forEach(id=>{
+        const el=document.getElementById(id);
+        if(el)drawLogo(el,el.width,isNight)
+      });
+      requestAnimationFrame(animateLogos)
+    }
+    animateLogos();
+
+    const TOOLS=[
+      'Bandit: Security Scanner',
+      'Radon: Complexity Analyzer',
+      'Vulture: Dead Code Detector',
+      'Groq: AI Test Generator',
+      'Mistral AI: Plain English Explainer',
+      'Novita AI: Code Improver',
+      'Cerebras: Security Advisor',
+      'AI21 Labs: Auto Doc Writer',
+      'Fireworks AI: Risk Scorer',
+      'Ollama: Local Pattern Detector'
+    ];
+
+    async function startScan(){
+      const code=document.getElementById('code-input').value.trim();
+      if(!code){alert('Please paste some Python code first!');return}
+      const overlay=document.getElementById('scan-overlay'),toolEl=document.getElementById('scan-tool'),fill=document.getElementById('scan-fill');
+      overlay.classList.add('show');
+      fill.style.width='0%';
+      let i=0;
+      const anim=setInterval(()=>{
+        fill.style.width=Math.min(100,(i+1)*10)+'%';
+        toolEl.textContent=TOOLS[Math.min(i,TOOLS.length-1)];
+        i++;
+        if(i>TOOLS.length)clearInterval(anim)
+      },260);
+      try{
+        const response=await fetch('/api/scan',{
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({code})
+        });
+        const data=await response.json();
+        clearInterval(anim);
+        fill.style.width='100%';
+        if(!data.ok)throw new Error(data.error||'Scan failed');
+        scanResults=data.results||[];
+        scanCount++;
+        renderDashboard();
+        renderStats();
+        updateProfileUI();
+        setTimeout(()=>{overlay.classList.remove('show');goTo('dashboard')},500)
+      }catch(err){
+        clearInterval(anim);
+        overlay.classList.remove('show');
+        alert(err.message||'Backend scan failed.')
+      }
+    }
+
+    function renderDashboard(){
+      const grid=document.getElementById('tools-grid');
+      if(!scanResults.length){grid.innerHTML='<div class="dash-note">No scan results found.</div>';return}
+      const bmap={warning:'badge-warn',clean:'badge-clean',done:'badge-done',error:'badge-error'};
+      const lmap={warning:'WARNING',clean:'CLEAN',done:'DONE',error:'ERROR'};
+      grid.innerHTML=scanResults.map(r=>{
+        const raw=(r.status||'').toLowerCase();
+        const status=raw.includes('warn')?'warning':raw.includes('clean')?'clean':raw.includes('error')?'error':'done';
+        const details=Array.isArray(r.details)?r.details:[r.details||'No details'];
+        return `<div class="tool-card">
+          <div class="card-top">
+            <div>
+              <div class="tool-name">${escapeHtml(r.tool||'Unknown Tool')}</div>
+              <div class="tool-co">${escapeHtml(r.company||'AI Engine')}</div>
+              <div class="tool-role">${escapeHtml(r.role||'Code Analysis')}</div>
+            </div>
+            <div class="badge ${bmap[status]}">${lmap[status]}</div>
+          </div>
+          <div class="card-count">${details.length} findings</div>
+          ${details.map(d=>`<div class="detail-item">${escapeHtml(String(d))}</div>`).join('')}
+        </div>`
+      }).join('')
+    }
+
+    function renderStats(){
+      const scoresRow=document.getElementById('scores-row'),barChart=document.getElementById('bar-chart');
+      if(!scanResults.length){scoresRow.innerHTML='';barChart.innerHTML='<div class="dash-note">No stats available yet.</div>';return}
+      const warningCount=scanResults.filter(r=>(r.status||'').toLowerCase().includes('warn')).length;
+      const cleanCount=scanResults.filter(r=>(r.status||'').toLowerCase().includes('clean')).length;
+      const securityScore=Math.max(1,10-warningCount);
+      const efficiencyScore=Math.min(10,cleanCount+3);
+      const maintainabilityScore=Math.max(1,10-Math.floor(warningCount/2));
+      const circ=2*Math.PI*52;
+      scoresRow.innerHTML=[
+        {label:'SECURITY SCORE',val:securityScore,color:securityScore>=7?'#00d4aa':securityScore>=4?'#ffaa00':'#ff4a6a',desc:'Estimated from current warning-heavy results.'},
+        {label:'CODE EFFICIENCY',val:efficiencyScore,color:efficiencyScore>=7?'#00d4aa':efficiencyScore>=4?'#ffaa00':'#ff4a6a',desc:'Higher clean counts increase efficiency confidence.'},
+        {label:'MAINTAINABILITY',val:maintainabilityScore,color:maintainabilityScore>=7?'#00d4aa':maintainabilityScore>=4?'#ffaa00':'#ff4a6a',desc:'Based on current findings and overall noise.'}
+      ].map(s=>{
+        const offset=circ*(1-s.val/10);
+        return `<div class="score-card">
+          <div class="score-label">${s.label}</div>
+          <div class="ring-wrap">
+            <svg width="130" height="130" viewBox="0 0 130 130">
+              <circle class="ring-bg" cx="65" cy="65" r="52" fill="none" stroke-width="10"></circle>
+              <circle class="ring-fill" cx="65" cy="65" r="52" fill="none" stroke="${s.color}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${offset}"></circle>
+            </svg>
+            <div class="ring-num" style="color:${s.color}">${s.val}/10</div>
+          </div>
+          <div class="score-desc">${s.desc}</div>
+        </div>`
+      }).join('');
+      const maxV=Math.max(...scanResults.map(r=>Number(r.count)||0),1);
+      barChart.innerHTML=scanResults.map(r=>{
+        const val=Number(r.count)||0;
+        return `<div class="bar-row">
+          <div class="bar-lbl">${escapeHtml(r.tool||'Tool')}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${Math.round(val/maxV*100)}%;background:${isNight?'#4a9eff':'#2e7d32'}"></div>
+          </div>
+          <div class="bar-num">${val}</div>
+        </div>`
+      }).join('')
+    }
+
+    function escapeHtml(str){
+      return String(str)
+        .replace(/&/g,'&amp;')
+        .replace(/</g,'&lt;')
+        .replace(/>/g,'&gt;')
+        .replace(/"/g,'&quot;')
+        .replace(/'/g,'&#39;')
+    }
+
+    applyTheme();
+    fetch('/api/profile')
+        .then(r => r.json())
+        .then(data => {
+            document.body.classList.remove('loading');
+            if(data.ok){
+                currentUser = data.user;
+                updateProfileUI();
+                document.getElementById('nav-links').style.display='flex';
+                document.getElementById('nav-profile').style.display='flex';
+                const lastPage = localStorage.getItem('lastPage') || 'landing';
+                goTo(lastPage);
+            } else {
+                updateProfileUI();
+                document.getElementById('nav-links').style.display='none';
+                document.getElementById('nav-profile').style.display='none';
+                goTo('auth-page');
+            }
+        })
+        .catch(() => {
+            document.body.classList.remove('loading');
+            updateProfileUI();
+            document.getElementById('nav-links').style.display='none';
+            document.getElementById('nav-profile').style.display='none';
+            goTo('auth-page');
+        });
+  </script>
+</body>
+</html>
