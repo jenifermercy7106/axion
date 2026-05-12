@@ -4,24 +4,6 @@ AI-Powered Code Health Scanner — 10 Tools, 1 Dashboard
 ## What it does
 You give it any Python project folder and it automatically runs 10 different AI tools on your code and shows everything in one dashboard — security issues, dead code, auto-generated tests, documentation, risk score, and more.
 
-## How to run
-
-**Step 1 — Start Ollama (separate terminal)**
-```bash
-ollama serve
-```
-
-**Step 2 — Scan your project**
-```bash
-python devscan.py ./sample-project
-```
-
-**Step 3 — Open the dashboard**
-```bash
-python dashboard.py
-```
-Then open http://localhost:5000 in your browser.
-
 ## The 10 AI Tools
 
 | #  |        Tool        |                 Role                |
